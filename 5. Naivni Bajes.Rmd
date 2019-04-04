@@ -1,8 +1,6 @@
 ---
 title: "Naive Bayes Classifier"
 output:
-  html_document:
-    df_print: paged
   pdf_document: default
 urlcolor: blue
 ---
@@ -318,8 +316,13 @@ Obviously, the 2nd model is much better.
 
 ROC curve enables us to choose the probability threshold that will result in the desired *specificity* vs *sensitivity* trade-off.
 
-*   **Sensitivity** or **True Positive Rate (TPR)** measures the proportion of positives that are correctly identified as such; it is the same as recall; it is calculated as TP/(TP+FN);
-*   **Specificity** or **True Negative Rate (TNR)** measures the proportion of negatives that are correctly identified as such; it is calculated as TN/(TN+FP).
+*   **Sensitivity** or **True Positive Rate (TPR)** measures the proportion of positives that are correctly identified as such; it is the same as recall; it is calculated as:
+
+$$TPR = \frac{TP}{TP+FN}$$
+
+*   **Specificity** or **True Negative Rate (TNR)** measures the proportion of negatives that are correctly identified as such; it is calculated as:
+
+$$TNR = \frac{TN}{TN+FP}$$
 
 To make use of a ROC curve to find the optimal probability threshold, we need to do prediction differently then we did above: instead of predicting a class value for each observation (using the default 0.5 probability threshold), we should, for each observation, compute the probability for each class value (in our example, 'Yes' and 'No').
 
@@ -353,15 +356,16 @@ Note the following:
 * the value of the **predictor** parameter is *nb2.pred.prob[,1]* which means that we are taking the probabilities given in the 1st column of the matrix, that is, the probabilities of the 'No' value of the outcome variable since it is the 'positive class' in the context of this problem (the class we are interested in predicting);
 * the value of the **level** parameter is set to c(2,1), to indicate that the level 2 ('Yes') represents the so-called 'controls' and the level 1 ('No') stands for 'cases'. This terminology that *roc()* f. uses (controls and cases) originates from research, where 'cases' are those observations we are interested in; in our terminology, 'cases' are observations of the 'positive' class. 
 
-We can extract the **Area Under the Curve (AUC)** value from the output of the *roc* function:
+**Area Under the Curve (AUC)** represents degree separability, it tells us how much model is capable of distinguishing between classes. Higher the AUC, better the model. AUC takes values in the [0,1] range.
+
+We can extract the AUC value from the output of the *roc* function:
 
 ```{r}
 # print the Area Under the Curve (AUC) value
 nb2.roc$auc
 ```
 
-A rather high value (recall that AUC takes values in the [0,1] range, and the higher it is, the better).
-
+A rather high value. 
 
 We can draw the ROC curve.
 
