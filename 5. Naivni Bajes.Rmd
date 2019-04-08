@@ -28,6 +28,127 @@ Using Bayes theorem, we can find the probability of **class x**, given that we k
 
 The assumption made here is that the predictors/features are independent. That is, the presence of one particular feature does not affect the other. Hence the name of the algorithm *naive*.
 
+## Naive Bayes Example
+
+Suppose we have a dataset of 300 people buying a specific product with two independent variables: *Visited other stores* and *Came alone*. The dependent variable is *Buy* (whether they bought the product or not).
+
+Sample of the data looks like the following:
+
+```{r echo=FALSE}
+library(knitr)
+knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)})
+#install.packages("kableExtra")
+library(kableExtra)
+buying.data <- data.frame(
+  "Visited other stores" = c(TRUE,TRUE,FALSE,TRUE),
+  Alone = c(TRUE, FALSE, FALSE, FALSE),
+  Buy = c(TRUE, FALSE, FALSE, FALSE))
+
+buying.data %>%
+  kable(row.names = T,
+        col.names = c("Visited other stores",
+                      "Alone",
+                      "Buy"), 
+        align=rep('c', 3)) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```
+
+Based on the original dataset, we create a frequency table for each possible value for all attributes.
+
+```{r echo=FALSE}
+buying.data.summary <- data.frame(
+  "Buy" = c(FALSE, TRUE, "Total"),
+  "TRUE" = c(90, 75, 165),
+  "FALSE" = c(10, 125, 135),
+  "TRUE" = c(25, 40, 65),
+  "FALSE" = c(75, 160, 235),
+  "Total" = c(100, 200, 300))
+
+buying.data.summary %>%
+  kable(col.names = c("Buy (class)",
+                      "TRUE",
+                      "FALSE",
+                      "TRUE",
+                      "FALSE",
+                      "Total"), 
+        align=rep('c', 5)) %>%
+  kable_styling(bootstrap_options = "striped", position = "left") %>%
+  add_header_above(c(" " = 1, "Visited other stores" = 2, "Alone" = 2, " " = 1)) %>%
+  row_spec(3, bold = T) %>%
+  column_spec(6, bold = T)
+```
+
+Bayes theorem is the following:
+
+$$P(c|x) = \frac{P(x|c) * P(c)}{P(x)}$$
+
+The variable **c** is the class variable (Buy), while variable **x** represents the features. Since we have two features, **x** is given as:
+
+$$X = (x_{visited}, x_{alone})$$
+
+By substituting for **x** and expanding the formula using the chain rule, we get:
+
+$$P(c|x_{visited},x_{alone}) = \frac{ P(x_{visited} | c) * P(x_{alone} | c) * P(c) }{ P(x_{visited}) * P(x_{alone} }$$
+
+First, let's convert the table of counts into a table of percentages.
+
+Probability of **Won't buy** class: $\frac{100}{100 + 200} = 0.333$
+
+Probability of **Buy** class: $\frac{200}{100 + 200} = 0.667$
+
+Probability of **Visited** and **Won't buy**: $\frac{90}{100} = 0.9$
+
+Probability of **Visited** and **Buy**: $\frac{75}{200} = 0.375$
+
+...
+
+```{r echo=FALSE}
+buying.data.prob <- data.frame(
+  "Buy" = c(FALSE, TRUE, "Total"),
+  "TRUE" = c(0.9, 0.375, 0.55),
+  "FALSE" = c(0.1, 0.625, 0.45),
+  "TRUE" = c(0.25, 0.2, 0.217),
+  "FALSE" = c(0.75, 0.8, 0.783),
+  "Total" = c(0.333, 0.667, ""))
+
+buying.data.prob %>%
+  kable(col.names = c("Buy",
+                      "TRUE",
+                      "FALSE",
+                      "TRUE",
+                      "FALSE",
+                      "Total"), 
+        align=rep('c', 5)) %>%
+  kable_styling(bootstrap_options = "striped", position = "left") %>%
+  add_header_above(c(" " = 1, "Visited other stores" = 2, "Alone" = 2, " " = 1)) %>%
+  row_spec(3, bold = T) %>%
+  column_spec(6, bold = T)
+```
+
+We want to classify a new person who **Visited other stores** (Visited other stores = TRUE) and came **Alone** (Alone = TRUE) whether they will **Buy** a product or **Won't Buy** it.
+
+__Calculating the probability of Won't Buy__
+
+$$P(Won't buy|Visited,Alone) = \frac{P(Visited|Won't buy) * P(Alone|Won't buy) * P(Won't buy)}{P(Visited) * P(Alone)}$$
+
+$$P(Won't buy|Visited,Alone) =  \frac{0.9 * 0.25 * 0.33}{0.55 * 0.217} = \frac{0.07425}{0.11935} = 0.142$$
+
+__Calculating the probability of Buy__
+
+$$P(Buy|Visited,Alone) = \frac{P(Visited|Buy) * P(Alone|Buy) * P(Buy)}{P(Visited) * P(Alone)}$$
+
+$$P(Buy|Visited,Alone) = \frac{0.9 * 0.25 * 0.333}{0.55 * 0.217} = \frac{0.074925}{0.11935} = 0.627$$
+
+
+The final posterior probabilities can be standardized between 0 and 1:
+
+$$P(Won't buy|Visited,Alone) = \frac{0.142}{0.627 + 0.142} = 0.18$$
+
+
+$$P(Buy|Visited,Alone) = \frac{0.627}{0.627 + 0.142} = 0.82$$
+
+Since $P(Buy|Visited,Alone)$ is higher than 0.5 (the default threshold), the classifier will classify the new consumer, who **Visited other stores** and came **Alone**, with the class **Buy**.
+
 # Prepare the data set
 
 We will use the same data set (*Carseats*) as in the previous Lab. 
@@ -318,11 +439,11 @@ ROC curve enables us to choose the probability threshold that will result in the
 
 *   **Sensitivity** or **True Positive Rate (TPR)** measures the proportion of positives that are correctly identified as such; it is the same as recall; it is calculated as:
 
-$$TPR = \frac{TP}{TP+FN}$$
+$$TPR/Recall/Sensitivity = \frac{TP}{TP+FN}$$
 
 *   **Specificity** or **True Negative Rate (TNR)** measures the proportion of negatives that are correctly identified as such; it is calculated as:
 
-$$TNR = \frac{TN}{TN+FP}$$
+$$TNR / Specificity = \frac{TN}{TN+FP}$$
 
 To make use of a ROC curve to find the optimal probability threshold, we need to do prediction differently then we did above: instead of predicting a class value for each observation (using the default 0.5 probability threshold), we should, for each observation, compute the probability for each class value (in our example, 'Yes' and 'No').
 
@@ -356,9 +477,34 @@ Note the following:
 * the value of the **predictor** parameter is *nb2.pred.prob[,1]* which means that we are taking the probabilities given in the 1st column of the matrix, that is, the probabilities of the 'No' value of the outcome variable since it is the 'positive class' in the context of this problem (the class we are interested in predicting);
 * the value of the **level** parameter is set to c(2,1), to indicate that the level 2 ('Yes') represents the so-called 'controls' and the level 1 ('No') stands for 'cases'. This terminology that *roc()* f. uses (controls and cases) originates from research, where 'cases' are those observations we are interested in; in our terminology, 'cases' are observations of the 'positive' class. 
 
-**Area Under the Curve (AUC)** represents degree separability, it tells us how much model is capable of distinguishing between classes. Higher the AUC, better the model. AUC takes values in the [0,1] range.
+**Area Under the Curve (AUC)** represents degree separability, it tells us how much the model is capable of distinguishing between classes. Higher the AUC, better the model. AUC takes values in the [0,1] range.
 
-We can extract the AUC value from the output of the *roc* function:
+**AUC = 1**
+
+```{r fig.align='center', echo=FALSE}
+knitr::include_graphics(rep('images/ROC_AUC_1.png'))
+```
+
+This is an ideal situation. When two curves don’t overlap at all means model has an ideal measure of separability. It is perfectly able to distinguish between positive class and negative class.
+
+**AUC = 0.7**
+
+```{r fig.align='center', echo=FALSE}
+knitr::include_graphics(rep('images/ROC_AUC_0.7.png'))
+```
+
+When two distributions overlap, we introduce type 1 and type 2 error (FP and FN). Depending upon the threshold, we can minimize or maximize them. When AUC is 0.7, it means there is a 70% chance that the model will be able to distinguish between positive class and negative class.
+
+**AUC = 0.5**
+
+```{r fig.align='center', echo=FALSE}
+knitr::include_graphics(rep('images/ROC_AUC_0.5.png'))
+```
+
+This is the worst situation. When AUC is approximately 0.5, the model has no discrimination capacity to distinguish between positive class and negative class.
+
+
+In our example, we can extract the AUC value from the output of the *roc* function:
 
 ```{r}
 # print the Area Under the Curve (AUC) value
@@ -429,7 +575,7 @@ nb2.eval2 <- compute.eval.metrics(nb2.cm2)
 nb2.eval2
 ```
 
-Note that the accuracy and sensitivity (recall) are the same as in thecorresponding column (column 5 that corresponds to the chosen threshold) in the nb2.coords matrix.
+Note that the accuracy and sensitivity (recall) are the same as in the corresponding column (column 5 that corresponds to the chosen threshold) in the nb2.coords matrix.
 
 Compare the results of the 3 models:
 
