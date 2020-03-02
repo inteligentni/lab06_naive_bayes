@@ -1,131 +1,88 @@
 ---
 title: "Naive Bayes Classifier"
 output:
+  word_document: default
   pdf_document: default
 urlcolor: blue
 ---
-# Short Intro
+# Short Intro to Naive Bayes
 
-A Naive Bayes classifier is a probabilistic machine learning model used for classification task. It is based on the *Bayes theorem*:
+Naive Bayes is a probabilistic machine learning algorithm used for the classification task. It is based on the *Bayes theorem* that, in the context of the classification task, can be expressed as follows:
 
-$$P(c|x) = \frac{P(x|c) * P(c)}{P(x)}$$
+$$P(c|X) = \frac{P(X|c) * P(c)}{P(X)}$$
 
 Where:
 
 * *c* represents the class,  
 
-* *x* represents features,
+* *X* represents a vector of features (attributes) used for predicting the class,
 
-* *P(c|x)* is the _posterior probability_ of class c given the predictor (features).
+* *P(c|X)* is the *posterior probability* of class *c* given the feature vector *X*.
 
-* *P(c)* is the probability of class.
+* *P(c)* is the *prior probability* of class *c*.
 
-* *P(x|c)* is the _likelihood_ which is the probability of predictor given class.
+* *P(X|c)* is the conditional probability of feature values *X* given the class *c*.
 
-* *P(x)* is the _prior probability_ of the predictor.
+* *P(X)* is the probability of features *X*.
 
-Using Bayes theorem, we can find the probability of **class x**, given that we know the values of the **feature x**.
+Using Bayes theorem, we can find the probability of **class c**, given that we know the values of the **feature vector X**.
 
-The assumption made here is that the predictors/features are independent. That is, the presence of one particular feature does not affect the other. Hence the name of the algorithm *naive*.
+Naive Bayes relies on the assumption that features (attributes) are independent. That is, values of one particular feature are not associated / correlated with values of any other feature. This is in most cases an unrealistic assumption - hence the name of the algorithm *naive*.
 
 ## Naive Bayes Example
 
-Suppose we have a dataset of 300 people buying a specific product with two independent variables: *Visited other stores* and *Came alone*. The dependent variable is *Buy* (whether they bought the product or not).
+Suppose we have a dataset about purchases made by 300 people. The dependent variable is *Buy* (whether they bought the product or not). Independent variables are *Visited other stores* and *Came alone*.
 
-Sample of the data looks like the following:
+Sample of the data looks as follows:
 
-```{r echo=FALSE}
-library(knitr)
-knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)})
-#install.packages("kableExtra")
-library(kableExtra)
-buying.data <- data.frame(
-  "Visited other stores" = c(TRUE,TRUE,FALSE,TRUE),
-  Alone = c(TRUE, FALSE, FALSE, FALSE),
-  Buy = c(TRUE, FALSE, FALSE, FALSE))
-
-buying.data %>%
-  kable(row.names = T,
-        col.names = c("Visited other stores",
-                      "Alone",
-                      "Buy"), 
-        align=rep('c', 3)) %>%
-  kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```{r fig.align='center', out.width = "50%", out.height="50%", echo=FALSE}
+knitr::include_graphics(rep('images/NB_example_Table_1.png'))
 ```
 
-Based on the original dataset, we create a frequency table for each possible value for all attributes.
+Based on the original dataset, we create a frequency table (below) for each combination of values of independent and dependent variables. For example, there were 90 people who visited other stores and did not make a purchase and 40 persons who came alone and made a purchase.
 
-```{r echo=FALSE}
-buying.data.summary <- data.frame(
-  "Buy" = c(FALSE, TRUE, "Total"),
-  "TRUE" = c(90, 75, 165),
-  "FALSE" = c(10, 125, 135),
-  "TRUE" = c(25, 40, 65),
-  "FALSE" = c(75, 160, 235),
-  "Total" = c(100, 200, 300))
-
-buying.data.summary %>%
-  kable(col.names = c("Buy (class)",
-                      "TRUE",
-                      "FALSE",
-                      "TRUE",
-                      "FALSE",
-                      "Total"), 
-        align=rep('c', 5)) %>%
-  kable_styling(bootstrap_options = "striped", position = "left") %>%
-  add_header_above(c(" " = 1, "Visited other stores" = 2, "Alone" = 2, " " = 1)) %>%
-  row_spec(3, bold = T) %>%
-  column_spec(6, bold = T)
+```{r fig.align='center', out.width = "250px", out.height="100px", echo=FALSE}
+knitr::include_graphics(rep('images/NB_example_Table_2.png'))
 ```
 
-Bayes theorem is the following:
 
-$$P(c|x) = \frac{P(x|c) * P(c)}{P(x)}$$
+Recall the Bayes theorem:
 
-The variable **c** is the class variable (Buy), while variable **x** represents the features. Since we have two features, **x** is given as:
+$$P(c|X) = \frac{P(X|c) * P(c)}{P(X)}$$
+
+The variable **c** is the class variable (Buy), while variable **X** represents the features. Since we have two features, **X** is given as:
 
 $$X = (x_{visited}, x_{alone})$$
 
-By substituting for **x** and expanding the formula using the chain rule, we get:
+By substituting for **X** and expanding the formula using the chain rule, we get:
 
-$$P(c|x_{visited},x_{alone}) = \frac{ P(x_{visited} | c) * P(x_{alone} | c) * P(c) }{ P(x_{visited}) * P(x_{alone} }$$
+$$P(c|x_{visited},x_{alone}) = \frac{ P(x_{visited} | c) * P(x_{alone} | c) * P(c) }{ P(x_{visited}) * P(x_{alone}) }$$
 
-First, let's convert the table of counts into a table of percentages.
+We will use our frequency table (given above) to do the computations.
+To that end, let's convert the frequency table into a table of probabilities. 
 
-Probability of **Won't buy** class: $\frac{100}{100 + 200} = 0.333$
+First, we will compute *prior probability* for each class:
 
-Probability of **Buy** class: $\frac{200}{100 + 200} = 0.667$
+Prior probability of **Won't buy** class: $\frac{100}{100 + 200} = 0.333$
 
-Probability of **Visited** and **Won't buy**: $\frac{90}{100} = 0.9$
+Prior probability of **Buy** class: $\frac{200}{100 + 200} = 0.667$
 
-Probability of **Visited** and **Buy**: $\frac{75}{200} = 0.375$
 
-...
+Next, we compute conditional probabilities - first for *Visiting other stores*:
 
-```{r echo=FALSE}
-buying.data.prob <- data.frame(
-  "Buy" = c(FALSE, TRUE, "Total"),
-  "TRUE" = c(0.9, 0.375, 0.55),
-  "FALSE" = c(0.1, 0.625, 0.45),
-  "TRUE" = c(0.25, 0.2, 0.217),
-  "FALSE" = c(0.75, 0.8, 0.783),
-  "Total" = c(0.333, 0.667, ""))
+Conditional probability of **Visiting other stores** given the **Won't buy** class: $\frac{90}{100} = 0.9$
 
-buying.data.prob %>%
-  kable(col.names = c("Buy",
-                      "TRUE",
-                      "FALSE",
-                      "TRUE",
-                      "FALSE",
-                      "Total"), 
-        align=rep('c', 5)) %>%
-  kable_styling(bootstrap_options = "striped", position = "left") %>%
-  add_header_above(c(" " = 1, "Visited other stores" = 2, "Alone" = 2, " " = 1)) %>%
-  row_spec(3, bold = T) %>%
-  column_spec(6, bold = T)
+Conditional probability of **Visiting other stores** given the **Buy** class: $\frac{75}{200} = 0.375$
+
+Similar computations should be done for *Came Alone*.
+
+As the result, we get the following table of probabilities:
+
+```{r fig.align='center', out.width = "50%", out.height="40%", echo=FALSE}
+knitr::include_graphics(rep('images/NB_example_Table_3.png'))
 ```
 
-We want to classify a new person who **Visited other stores** (Visited other stores = TRUE) and came **Alone** (Alone = TRUE) whether they will **Buy** a product or **Won't Buy** it.
+Now that we have the table with (prior and conditional) probabilities, we can predict for a new person who, for example, **Visited other stores** (Visited other stores = TRUE) and came **Alone** (Alone = TRUE) whether they will **Buy** or **Won't Buy** a product.
 
 __Calculating the probability of Won't Buy__
 
@@ -147,24 +104,24 @@ $$P(Won't buy|Visited,Alone) = \frac{0.142}{0.627 + 0.142} = 0.18$$
 
 $$P(Buy|Visited,Alone) = \frac{0.627}{0.627 + 0.142} = 0.82$$
 
-Since $P(Buy|Visited,Alone)$ is higher than 0.5 (the default threshold), the classifier will classify the new consumer, who **Visited other stores** and came **Alone**, with the class **Buy**.
+Since $P(Buy|Visited,Alone)$ is higher than 0.5 (the default threshold), the classifier will classify the new customer, who **Visited other stores** and came **Alone**, with the class **Buy**.
 
 # Prepare the data set
 
-We will use the same data set (*Carseats*) as in the previous Lab. 
+We will use the same data set (*Carseats*) as in the previous two Labs. 
 
 ```{r}
 # load ISLR package
 library(ISLR)
 
-# print dataset structure
+# examine the dataset structure
 str(Carseats)
 ```
 
-As we did before, we will introduce a categorical (factor) variable *HighSales* to be used as the outcome variable (variable defining the class for each observation). If a sale is greater than the 3rd quartile (9.32), it qualifies as a high sale.
+As we did before, we will introduce a categorical (factor) variable *HighSales* to be used as the outcome variable (variable defining the class for each observation). Sales greater than the 3rd quartile qualify as high sales.
 
 ```{r}
-# calculate 3rd quartile
+# calculate the 3rd quartile
 sales.3Q <- quantile(Carseats$Sales, 0.75)
 
 # create a new variable HighSales based on the value of the 3rd quartile
@@ -176,26 +133,26 @@ Carseats$HighSales <- ifelse(test = Carseats$Sales > sales.3Q,
 Carseats$HighSales <- as.factor(Carseats$HighSales)
 ```
 
-We'll remove the *Sales* variable, as we do not need it anymore.
+We'll remove the *Sales* variable - since it was used for the creation of the outcome variable, it should not be used for prediction.
 
 ```{r}
 # remove the Sales variable
-Carseats <- Carseats[,-1]
+Carseats$Sales <- NULL
 str(Carseats)
 ```
 
-# Numerical variables discretization
+# Discretization on numeric variables 
 
-NB is often used with nominal (categorical) variables. If numeric variables are to be used, they have to be:
+NB is often used with nominal (categorical) variables. If a numeric variable is to be used, it has to be:
 
 * represented as probabilities based on the appropriate probability distribution (typically Normal distribution), or 
-* discretized, that is, have their range of values split into several segments, and thus be turned into a discrete set of values.
+* discretized, that is, have its range of values split into several segments, and thus be turned into a discrete set of values.
 
 Let's examine if our numerical variables are normally distributed so that we can decide whether to go with option (1) or to opt for (2).
 
 As we did before, we'll use the Shapiro-Wilk test to check for normality. 
 ```{r}
-# filter all numerical variables
+# select numerical variables
 num.vars <- c(1:5,7,8)
 
 # apply the Shapiro-Wilk test to each numerical column (variable)
@@ -208,10 +165,10 @@ Only *CompPrice* and *Price* are normally distributed. The other 5 variables hav
 
 We will do **unsupervised discretization**. It consists of dividing a continuous variable into groups (also referred to as *bins*) without taking into account the class attribute or any other information. It can be done in two ways: 
 
-*   **equal length intervals** - the range of values of an attribute is split into *k* number of intervals of (roughly) equal lengths; *k* needs to be specified;
-*   **equal frequency intervals** - the range of values of an attribute is split into *k* number of intervals so that each interval has (roughly) an equal number of values; *k* needs to be set.
+*   **equal length intervals** - the range of value of an attribute is split into *k* intervals of (roughly) equal lengths; *k* needs to be specified; this method is known as *interval discretization* 
+*   **equal frequency intervals** - the range of value of an attribute is split into *k* intervals so that each interval has (roughly) equal number of values; *k* needs to be set; this method is known as *quantile discretization* 
 
-In general, the 2nd option tends to be better of the two.
+In general, the 2nd option tends to give better results.
 
 To do the discretization seamlessly, we'll use the *discretize* f. from the *bnlearn* R package.
 
@@ -224,14 +181,14 @@ library(bnlearn)
 Let's first examine this function:
 
 ```{r}
-# print the docs for the discretize f.
+# open the docs for the discretize f.
 ?discretize
 ```
 
-We will discretize our numeric variables using the *equal frequency method* (the better of the two aforementioned options). We'll try to split the variables into 5 equal frequency intervals: 
+We will discretize our numeric variables using the *equal frequency method* (the better of the two aforementioned options). We'll try to split the variables into 5 intervals of equal frequency: 
 
 ```{r}
-# filter all variables to be discretized
+# select variables to be discretized
 to.discretize <- c("Education", "Age", "Population", "Advertising", "Income")
 
 # discretize all variables into 5 bins each
@@ -243,7 +200,7 @@ to.discretize <- c("Education", "Age", "Population", "Advertising", "Income")
 R reports an error related to the *Advertising* variable. The reason is a very uneven (skewed) distribution of this variable so that it cannot be split as we intended to. To understand this better, let's check the distribution of this variable:
 
 ```{r}
-# print the summary for the Advertising variable
+# print the summary statistics for the Advertising variable
 summary(Carseats$Advertising)
 ```
 
@@ -270,7 +227,7 @@ discretized <- discretize(data = Carseats[,to.discretize],
 Examine the newly created variables.
 
 ```{r}
-# print the summary of the discretized dataset
+# print the summary statistics of the discretized dataset
 summary(discretized)
 ```
 
@@ -281,7 +238,7 @@ Create a new data set by merging the discretized variables with the rest of the 
 cols.to.add <- setdiff(names(Carseats), names(discretized))
 
 # merge the discretized data frame with other columns from the original data frame
-carseats.new <- data.frame(cbind(Carseats[,cols.to.add], discretized))
+carseats.new <- cbind(Carseats[,cols.to.add], discretized)
 str(carseats.new)
 ```
 
@@ -307,7 +264,7 @@ library(caret)
 We'll take 80% of observations for the training set and the rest for the test set
 ```{r}
 # set seed
-set.seed(1010)
+set.seed(20320)
 
 # create train and test sets
 train.indices <- createDataPartition(carseats.new$HighSales, p = 0.8, list = FALSE)
@@ -323,7 +280,7 @@ To build an NB model, we will use the **naiveBayes** function from the **e1071**
 # load the e1071 package
 library(e1071)
 
-# print the docs for the naiveBayes f.
+# open the docs for the naiveBayes f.
 ?naiveBayes
 ```
 
@@ -341,7 +298,7 @@ We can print the model to see the probabilities that the function computed for e
 print(nb1)
 ```
 
-Note that the values given for the *CompPrice* and *Price* variables are the mean (1st column) and the standard deviation (2nd column) for the two possible values (No, Yes) of the outcome variable (marked as Y). For all other variables, we have probabilities for each possible value of the variable and each outcome value.
+Note that the values given for the *CompPrice* and *Price* variables are the mean (1st column) and the standard deviation (2nd column) for the two possible values (No, Yes) of the outcome variable (marked as Y). For all other variables, we have probabilities for each combination of values of the predictor and outcome variables.
 
 Let's evaluate the model on the test set.
 
@@ -362,6 +319,7 @@ nb1.cm
 ```
 
 We'll use the function for computing the evaluation metrics.
+Recall (from the previous Labs) that we set No as the positive class.
 
 ```{r}
 # function for computing evaluation metrix
@@ -386,7 +344,7 @@ nb1.eval <- compute.eval.metrics(nb1.cm)
 nb1.eval
 ```
 
-We can try to build a better model by reducing the set of variables to those that are expected to be relevant predictors. For example, we can choose only those variables that proved relevant in the decision tree classifier (Lab #3).
+We can try to build a better model by reducing the set of variables to those that are expected to be relevant predictors. For example, we can choose only those variables that proved relevant in the decision tree classifier (Lab #4).
 
 ```{r}
 # build a model with variables ShelveLoc, Price, Advertising, Age, CompPrice
@@ -421,10 +379,10 @@ These results look better than those we got for the first model; let's compare t
 
 ```{r}
 # compare the evaluation metrics for nb1 and nb2
-data.frame(rbind(nb1.eval, nb2.eval), row.names = c("NB model 1", "NB model 2"))
+data.frame(rbind(nb1.eval, nb2.eval), row.names = c("NB_1", "NB_2"))
 ```
 
-Obviously, the 2nd model is much better.
+Obviously, the 2nd model is better.
 
 
 **TASK**: Examine if further improvement of the model can be achieved by doing the discretization differently:
@@ -437,13 +395,13 @@ Obviously, the 2nd model is much better.
 
 ROC curve enables us to choose the probability threshold that will result in the desired *specificity* vs *sensitivity* trade-off.
 
-*   **Sensitivity** or **True Positive Rate (TPR)** measures the proportion of positives that are correctly identified as such; it is the same as recall; it is calculated as:
+*   **Sensitivity** or **True Positive Rate (TPR)** measures the proportion of positives that are correctly predicted as such; it is the same as recall; it is calculated as:
 
-$$TPR/Recall/Sensitivity = \frac{TP}{TP+FN}$$
+$$Sensitivity/TPR/Recall = \frac{TP}{TP+FN}$$
 
-*   **Specificity** or **True Negative Rate (TNR)** measures the proportion of negatives that are correctly identified as such; it is calculated as:
+*   **Specificity** or **True Negative Rate (TNR)** measures the proportion of negatives that are correctly predicted as such; it is calculated as:
 
-$$TNR / Specificity = \frac{TN}{TN+FP}$$
+$$Specificity/TNR = \frac{TN}{TN+FP}$$
 
 To make use of a ROC curve to find the optimal probability threshold, we need to do prediction differently then we did above: instead of predicting a class value for each observation (using the default 0.5 probability threshold), we should, for each observation, compute the probability for each class value (in our example, 'Yes' and 'No').
 
@@ -455,7 +413,7 @@ head(nb2.pred.prob)
 
 So, now, for each observation from the test set we have probabilities of the class value 'Yes' and the value 'No'. We will now use a ROC curve to determine which probability threshold to use to classify each store (observation) as having high sales ('Yes') or not ('No').
 
-To create ROC curves, we'll use the **pROC** package (more info about pROC can be found [here](https://web.expasy.org/pROC/)).
+To create a ROC curve, we'll use the **pROC** package (more info about pROC can be found [here](https://web.expasy.org/pROC/)).
 
 ```{r message=FALSE}
 #install.packages('pROC')
@@ -475,9 +433,9 @@ nb2.roc <- roc(response = as.numeric(test.data$HighSales),
 Note the following:
 
 * the value of the **predictor** parameter is *nb2.pred.prob[,1]* which means that we are taking the probabilities given in the 1st column of the matrix, that is, the probabilities of the 'No' value of the outcome variable since it is the 'positive class' in the context of this problem (the class we are interested in predicting);
-* the value of the **level** parameter is set to c(2,1), to indicate that the level 2 ('Yes') represents the so-called 'controls' and the level 1 ('No') stands for 'cases'. This terminology that *roc()* f. uses (controls and cases) originates from research, where 'cases' are those observations we are interested in; in our terminology, 'cases' are observations of the 'positive' class. 
+* the value of the **level** parameter is set to c(2,1), to indicate that the level 2 ('Yes') represents the so-called 'controls' and the level 1 ('No') stands for 'cases'. This terminology that *roc()* f. uses (controls and cases) originates from research, where 'cases' are those observations we are interested in; in our terminology, 'cases' stand for the 'positive' class, whereas 'controls' stand for the 'negative' class. 
 
-**Area Under the Curve (AUC)** represents degree separability, it tells us how much the model is capable of distinguishing between classes. Higher the AUC, better the model. AUC takes values in the [0,1] range.
+**Area Under the Curve (AUC)** represents the degree of separability, that is, it tells us how much the model is capable of distinguishing between classes. AUC takes values in the [0,1] range. The higher the AUC, the better the model. 
 
 **AUC = 1**
 
@@ -485,7 +443,7 @@ Note the following:
 knitr::include_graphics(rep('images/ROC_AUC_1.png'))
 ```
 
-This is an ideal situation. When two curves don’t overlap at all means model has an ideal measure of separability. It is perfectly able to distinguish between positive class and negative class.
+This is an ideal situation - the two curves do not overlap at all, indicating that the model has an ideal measure of separability. It is perfectly able to distinguish between the positive class and the negative class.
 
 **AUC = 0.7**
 
@@ -493,7 +451,7 @@ This is an ideal situation. When two curves don’t overlap at all means model h
 knitr::include_graphics(rep('images/ROC_AUC_0.7.png'))
 ```
 
-When two distributions overlap, we introduce type 1 and type 2 error (FP and FN). Depending upon the threshold, we can minimize or maximize them. When AUC is 0.7, it means there is a 70% chance that the model will be able to distinguish between positive class and negative class.
+When two distributions overlap, we introduce type 1 and type 2 error (FP and FN, respectively). Depending upon the threshold, we can minimize one or the type of error. When AUC is 0.7, it means there is a 70% chance that the model will be able to distinguish between the positive class and the negative class.
 
 **AUC = 0.5**
 
@@ -501,7 +459,7 @@ When two distributions overlap, we introduce type 1 and type 2 error (FP and FN)
 knitr::include_graphics(rep('images/ROC_AUC_0.5.png'))
 ```
 
-This is the worst situation. When AUC is approximately 0.5, the model has no discrimination capacity to distinguish between positive class and negative class.
+This is the worst situation. When AUC is approximately 0.5, the model has no discrimination capacity, that is, it is not able to distinguish between the positive class and the negative class.
 
 
 In our example, we can extract the AUC value from the output of the *roc* function:
@@ -522,13 +480,13 @@ plot.roc(nb2.roc,
          print.thres.best.method = "youden")
 ```
 
-**Note**: the plotting f. uses the "*youden*" method for choosing the probability threshold; this method chooses the threshold that maximizes the sum of sensitivity and specificity. Examine the other methods for choosing the threshold in the documentation of the *coords* function.
+**Note**: the plotting f. uses the *youden* method for choosing the probability threshold; this method finds the threshold that maximizes the sum of sensitivity and specificity. Examine the other methods for choosing the threshold in the documentation of the *coords* function.
 
-The plot indicates that if we want to maximize the sum of sensitivity and specificity, we should choose the probability threshold of 0.668, and that will give us specificity of 0.933, and sensitivity of 0.789.
+The plot indicates that if we want to maximize the sum of sensitivity and specificity, we should choose the probability threshold of 0.779, and that will give us specificity of 0.842, and sensitivity of 0.850.
 
 Instead of using the plot to get the threshold value, we can use the *coords* function (also from the *pROC* package). This function has numerous parameters; for us, the following two are particularly important:
 
-*   **x** - the coordinates to look for; we'll use "*local maximas*", meaning that we want to examine the model performance on the points (threshold values) that represent the local maxima of the ROC curve; check the documentation for the other values;
+*   **x** - the coordinates to look for; we'll use *local maximas*, meaning that we want to examine the model performance on the points (threshold values) that represent the local maxima of the ROC curve; check the documentation for the other values;
 *   **ret** - the classification metrics the method should return; we will take accuracy, specificity, sensitivity, and threshold; check the documentation for the other values.
 
 ```{r}
@@ -539,14 +497,14 @@ nb2.coords <- coords(nb2.roc,
 nb2.coords
 ```
 
-From the above plot, we can see that the ROC curve has 7 local maxima, and we have obtained the metrics for each of them. We can now choose the threshold that will give us the best result in terms of accuracy, sensitivity (recall or true positive rate) or specificity (true negative rate). 
+From the above plot, we can see that the ROC curve has 9 local maxima, and we have obtained the metrics for each of them. We can now choose the threshold that will give us the best result in terms of accuracy, sensitivity (recall or true positive rate) or specificity (true negative rate). 
 
-For example, in our case, specificity represents the proportion of high sales that we have recognized as such (high sales). So, if we want to maximize specificity, that is, to reduce the number of stores that were falsely classified as not having high sales, we can choose the threshold of 0.78598, as it will give us the specificity of 0.8421, while still providing us with decent sensitivity (0.8333) and accuracy (0.8354). 
-Let's make predictions based on this threshold (0.78598):   
+For example, in our case, sensitivity represents the proportion of low sales that we have recognized as such (as being low). So, if we want to maximize sensitivity, that is, to reduce the number of stores that were falsely classified as having high sales, we can choose the threshold of 0.5918, as it will give us the sensitivity of 0.95, while maximising the accuracy (0.8987) and still providing us with a decent value for the specificity (0.7368). 
+Let's make predictions based on the chosen threshold:   
 
 ```{r}
-# choose a threshold of 0.7859801 
-prob.threshold <- nb2.coords[4,5]
+# choose a threshold that maximizes sensitivity while keep decent values of other metrics 
+prob.threshold <- nb2.coords[4,4]
 ```
 
 Determine the class label (Yes, No) using the predicted probabilities (nb2.pred.prob) and the chosen threshold (prob.threshold):
@@ -555,7 +513,7 @@ Determine the class label (Yes, No) using the predicted probabilities (nb2.pred.
 # create predictions based on the new threshold
 nb2.pred2 <- ifelse(test = nb2.pred.prob[,1] >= prob.threshold, # if probability of the positive class (No) is greater than the chosen probability threshold ...
                     yes = "No", #... assign the positive class (No)
-                    no = "Yes") #... assign the negative class (Yes)
+                    no = "Yes") #... otherwise, assign the negative class (Yes)
 nb2.pred2 <- as.factor(nb2.pred2)
 ```
 

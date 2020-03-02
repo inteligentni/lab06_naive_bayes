@@ -9,10 +9,10 @@
 # load ISLR package
 
 
-# print dataset structure
+# examine the dataset structure
 
 
-# calculate 3rd quartile
+# calculate the 3rd quartile
 
 
 # create a new variable HighSales based on the value of the 3rd quartile
@@ -28,25 +28,25 @@
 # Numerical variables discretization
 ########################################
 
-# filter all numerical variables
+# select numerical variables
 
 
 # apply the Shapiro-Wilk test to each numerical column (variable)
 
 
+#install.packages('bnlearn')
 # load bnlearn package
 
+# open the docs for the discretize f.
 
-# print the docs for the discretize f.
 
-
-# filter all variables to be discretized
+# select variables to be discretized
 
 
 # discretize all variables into 5 bins each
 
 
-# print the summary for the Advertising variable
+# print the summary statistics for the Advertising variable
 
 
 # load ggplot2
@@ -58,7 +58,7 @@
 # discretize all variables into 5 bins each, but the Advertising variable into 2 bins
 
 
-# print the summary of the discretized dataset
+# print the summary statistics of the discretized dataset
 
 
 # calculate the difference between the two vectors (with variable names)
@@ -67,7 +67,7 @@
 # merge the discretized data frame with other columns from the original data frame
 
 
-# update the variable order
+# update the variable order (optional)
 
 
 # print the structure of the carseats.new data frame
@@ -75,9 +75,7 @@
 
 # load the caret package
 
-
 # set seed
-
 
 # create train and test sets
 
@@ -89,7 +87,7 @@
 # load the e1071 package
 
 
-# print the docs for the naiveBayes f.
+# open the docs for the naiveBayes f.
 
 
 # build a model with all variables
@@ -108,22 +106,13 @@
 
 
 # function for computing evaluation metrix
-compute.eval.metrics <- function(cmatrix) {
-  TP <- cmatrix[1,1] # true positive
-  TN <- cmatrix[2,2] # true negative
-  FP <- cmatrix[2,1] # false positive
-  FN <- cmatrix[1,2] # false negative
-  acc = sum(diag(cmatrix)) / sum(cmatrix)
-  precision <- TP / (TP + FP)
-  recall <- TP / (TP + FN)
-  F1 <- 2*precision*recall / (precision + recall)
-  c(accuracy = acc, precision = precision, recall = recall, F1 = F1)
-}
+
 
 # compute the evaluation metrics
 
 
-# build a model with variables ShelveLoc, Price, Advertising, Age, CompPrice
+# build a model with variables that proved relevant in the decision tree classifier (Lab #4)
+# namely ShelveLoc, Price, Advertising, Age, and CompPrice
 
 
 # make the predictions with nb2 model over the test dataset
@@ -145,6 +134,7 @@ compute.eval.metrics <- function(cmatrix) {
 # compute probabilities for each class value for the observations in the test set
 
 
+#install.packages('pROC')
 # load pROC package
 
 
@@ -154,13 +144,13 @@ compute.eval.metrics <- function(cmatrix) {
 # print the Area Under the Curve (AUC) value
 
 
-# plot the ROC curve
+# plot the ROC curve, using the "youden" method
 
 
 # get the coordinates for all local maximas
 
 
-# choose a threshold of 0.7859801 
+# choose a threshold that maximizes sensitivity while keep decent values of other metrics
 
 
 # create predictions based on the new threshold
