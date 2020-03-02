@@ -9,10 +9,10 @@
 # load ISLR package
 library(ISLR)
 
-# print dataset structure
+# examine the dataset structure
 str(Carseats)
 
-# calculate 3rd quartile
+# calculate the 3rd quartile
 sales.3Q <- quantile(Carseats$Sales, 0.75)
 
 # create a new variable HighSales based on the value of the 3rd quartile
@@ -24,14 +24,14 @@ Carseats$HighSales <- ifelse(test = Carseats$Sales > sales.3Q,
 Carseats$HighSales <- as.factor(Carseats$HighSales)
 
 # remove the Sales variable
-Carseats <- Carseats[,-1]
+Carseats$Sales <- NULL
 str(Carseats)
 
 ########################################
 # Numerical variables discretization
 ########################################
 
-# filter all numerical variables
+# select numerical variables
 num.vars <- c(1:5,7,8)
 
 # apply the Shapiro-Wilk test to each numerical column (variable)
@@ -43,10 +43,10 @@ apply(X = Carseats[,num.vars],
 # load bnlearn package
 library(bnlearn)
 
-# print the docs for the discretize f.
+# open the docs for the discretize f.
 ?discretize
 
-# filter all variables to be discretized
+# select variables to be discretized
 to.discretize <- c("Education", "Age", "Population", "Advertising", "Income")
 
 # discretize all variables into 5 bins each
@@ -54,7 +54,7 @@ to.discretize <- c("Education", "Age", "Population", "Advertising", "Income")
 #                          method = 'quantile', 
 #                          breaks = c(5,5,5,5,5))
 
-# print the summary for the Advertising variable
+# print the summary statistics for the Advertising variable
 summary(Carseats$Advertising)
 
 # load ggplot2
@@ -69,17 +69,17 @@ discretized <- discretize(data = Carseats[,to.discretize],
                           method = 'quantile', 
                           breaks = c(5,5,5,2,5))
 
-# print the summary of the discretized dataset
+# print the summary statistics of the discretized dataset
 summary(discretized)
 
 # calculate the difference between the two vectors (with variable names)
 cols.to.add <- setdiff(names(Carseats), names(discretized))
 
 # merge the discretized data frame with other columns from the original data frame
-carseats.new <- data.frame(cbind(Carseats[,cols.to.add], discretized))
+carseats.new <- cbind(Carseats[,cols.to.add], discretized)
 str(carseats.new)
 
-# update the variable order
+# update the variable order (optional)
 carseats.new <- carseats.new[,names(Carseats)]
 
 # print the structure of the carseats.new data frame
@@ -89,7 +89,7 @@ str(carseats.new)
 library(caret)
 
 # set seed
-set.seed(1010)
+set.seed(20320)
 
 # create train and test sets
 train.indices <- createDataPartition(carseats.new$HighSales, p = 0.8, list = FALSE)
@@ -103,7 +103,7 @@ test.data <- carseats.new[-train.indices,]
 # load the e1071 package
 library(e1071)
 
-# print the docs for the naiveBayes f.
+# open the docs for the naiveBayes f.
 ?naiveBayes
 
 # build a model with all variables
@@ -139,7 +139,8 @@ compute.eval.metrics <- function(cmatrix) {
 nb1.eval <- compute.eval.metrics(nb1.cm)
 nb1.eval
 
-# build a model with variables ShelveLoc, Price, Advertising, Age, CompPrice
+# build a model with variables that proved relevant in the decision tree classifier (Lab #4)
+# namely ShelveLoc, Price, Advertising, Age, and CompPrice
 nb2 <- naiveBayes(HighSales ~ ShelveLoc + Price + Advertising + Age + CompPrice,
 data = train.data)
 
@@ -155,7 +156,7 @@ nb2.eval <- compute.eval.metrics(nb2.cm)
 nb2.eval
 
 # compare the evaluation metrics for nb1 and nb2
-data.frame(rbind(nb1.eval, nb2.eval), row.names = c("NB model 1", "NB model 2"))
+data.frame(rbind(nb1.eval, nb2.eval), row.names = c("NB_1", "NB_2"))
 
 ##########################
 # ROC curves
@@ -177,7 +178,7 @@ nb2.roc <- roc(response = as.numeric(test.data$HighSales),
 # print the Area Under the Curve (AUC) value
 nb2.roc$auc
 
-# plot the ROC curve
+# plot the ROC curve, using the "youden" method
 plot.roc(nb2.roc, 
          print.thres = TRUE, 
          print.thres.best.method = "youden")
@@ -188,13 +189,13 @@ nb2.coords <- coords(nb2.roc,
                      x = "local maximas")
 nb2.coords
 
-# choose a threshold of 0.7859801 
-prob.threshold <- nb2.coords[4,5]
+# choose a threshold that maximizes sensitivity while keep decent values of other metrics
+prob.threshold <- nb2.coords[4,4]
 
 # create predictions based on the new threshold
 nb2.pred2 <- ifelse(test = nb2.pred.prob[,1] >= prob.threshold, # if probability of the positive class (No) is greater than the chosen probability threshold ...
                     yes = "No", #... assign the positive class (No)
-                    no = "Yes") #... assign the negative class (Yes)
+                    no = "Yes") #... otherwise, assign the negative class (Yes)
 nb2.pred2 <- as.factor(nb2.pred2)
 
 # create the confusion matrix for the new predictions
