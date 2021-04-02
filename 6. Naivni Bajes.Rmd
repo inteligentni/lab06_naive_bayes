@@ -1,8 +1,8 @@
 ---
 title: "Naive Bayes Classifier"
 output:
-  word_document: default
   pdf_document: default
+  word_document: default
 urlcolor: blue
 ---
 # Short Intro to Naive Bayes
@@ -192,42 +192,39 @@ We will discretize our numeric variables using the *equal frequency method* (the
 to.discretize <- c("Education", "Age", "Population", "Advertising", "Income")
 
 # discretize all variables into 5 bins each
-#discretized <- discretize(data = Carseats[,to.discretize], 
-#                          method = 'quantile', 
-#                          breaks = c(5,5,5,5,5))
+discretized <- discretize(data = Carseats[,to.discretize],
+                         method = 'quantile',
+                         breaks = c(5,5,5,5,5))
 ```
 
-R reports an error related to the *Advertising* variable. The reason is a very uneven (skewed) distribution of this variable so that it cannot be split as we intended to. To understand this better, let's check the distribution of this variable:
-
+Let's check the summary of the discretized variables
 ```{r}
-# print the summary statistics for the Advertising variable
-summary(Carseats$Advertising)
+summary(discretized)
 ```
 
-We can also examine the distribution visually.
+Notice that the Advertising variable could not be split into 5 segments of relatively equal frequencies; instead frequencies differ a lot across segments. To understand why this is the case, we need to examine the distribution of the Advertising variable.  
 
 ```{r}
-# load ggplot2
-library(ggplot2)
-
 # plot the histogram for the Advertising variable
+library(ggplot2)
 ggplot(data = Carseats, mapping = aes(x = Advertising)) + 
-  geom_histogram(bins = 30)
+  geom_histogram(bins = 30) +
+  theme_minimal()
 ```
+The plot shows a very uneven (skewed) distribution of this variable, which is the reason why we could not split it as we intended to. 
 
-So, instead of 5, we'll split the *Advertising* variable into 2 equal frequency intervals:
+So, instead of 5, we'll split the *Advertising* variable into 3 equal frequency intervals:
 
 ```{r}
-# discretize all variables into 5 bins each, but the Advertising variable into 2 bins
+# discretize all variables into 5 bins each, but the Advertising variable into 3 bins
 discretized <- discretize(data = Carseats[,to.discretize], 
                           method = 'quantile', 
-                          breaks = c(5,5,5,2,5))
+                          breaks = c(5,5,5,3,5))
 ```
 
-Examine the newly created variables.
+Examine again the summary statistics of the discretized variables
 
 ```{r}
-# print the summary statistics of the discretized dataset
 summary(discretized)
 ```
 
@@ -264,7 +261,7 @@ library(caret)
 We'll take 80% of observations for the training set and the rest for the test set
 ```{r}
 # set seed
-set.seed(20320)
+set.seed(2421)
 
 # create train and test sets
 train.indices <- createDataPartition(carseats.new$HighSales, p = 0.8, list = FALSE)
@@ -322,7 +319,7 @@ We'll use the function for computing the evaluation metrics.
 Recall (from the previous Labs) that we set No as the positive class.
 
 ```{r}
-# function for computing evaluation metrix
+# function for computing evaluation metrics
 compute.eval.metrics <- function(cmatrix) {
   TP <- cmatrix[1,1] # true positive
   TN <- cmatrix[2,2] # true negative
@@ -387,7 +384,7 @@ Obviously, the 2nd model is better.
 
 **TASK**: Examine if further improvement of the model can be achieved by doing the discretization differently:
 
-* by splitting the variable values into a smaller or larger number of intervals;
+* by splitting the variable values into a smaller or larger number of intervals
 
 * by using equal-interval instead of equal-frequency discretization method.
 
@@ -499,12 +496,12 @@ nb2.coords
 
 From the above plot, we can see that the ROC curve has 9 local maxima, and we have obtained the metrics for each of them. We can now choose the threshold that will give us the best result in terms of accuracy, sensitivity (recall or true positive rate) or specificity (true negative rate). 
 
-For example, in our case, sensitivity represents the proportion of low sales that we have recognized as such (as being low). So, if we want to maximize sensitivity, that is, to reduce the number of stores that were falsely classified as having high sales, we can choose the threshold of 0.5918, as it will give us the sensitivity of 0.95, while maximising the accuracy (0.8987) and still providing us with a decent value for the specificity (0.7368). 
+For example, in our case, sensitivity represents the proportion of low sales that we have recognized as such (as being low). So, if we want to maximize sensitivity, that is, to reduce the number of stores that were falsely classified as having high sales, we can choose the threshold of 0.4820, as it will give us the sensitivity of 0.9667, while maximizing accuracy (0.8734) and still providing us with a low, but still decent value for the specificity (0.5789). 
 Let's make predictions based on the chosen threshold:   
 
 ```{r}
 # choose a threshold that maximizes sensitivity while keep decent values of other metrics 
-prob.threshold <- nb2.coords[4,4]
+prob.threshold <- nb2.coords[3,4]
 ```
 
 Determine the class label (Yes, No) using the predicted probabilities (nb2.pred.prob) and the chosen threshold (prob.threshold):

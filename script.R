@@ -2,40 +2,21 @@
 # Naive Bayes Classifier
 ##########################
 
-##########################
-# Prepare the data set
-##########################
+# load utility functions
+source('util.R')
 
-# load ISLR package
-library(ISLR)
+# get adapted Carseats data set
+carseats <- get_adapted_carseats_dataset()
 
-# examine the dataset structure
-str(Carseats)
-
-# calculate the 3rd quartile
-sales.3Q <- quantile(Carseats$Sales, 0.75)
-
-# create a new variable HighSales based on the value of the 3rd quartile
-Carseats$HighSales <- ifelse(test = Carseats$Sales > sales.3Q,
-                             yes = 'Yes',
-                             no = 'No')
-
-# convert HighSales from character to factor
-Carseats$HighSales <- as.factor(Carseats$HighSales)
-
-# remove the Sales variable
-Carseats$Sales <- NULL
-str(Carseats)
-
-########################################
-# Numerical variables discretization
-########################################
+#################################
+# Discretise numerical variables
+#################################
 
 # select numerical variables
-num.vars <- c(1:5,7,8)
+num_vars <- c(1:5,7,8)
 
 # apply the Shapiro-Wilk test to each numerical column (variable)
-apply(X = Carseats[,num.vars], 
+apply(X = carseats[,num_vars], 
       MARGIN = 2, 
       FUN = shapiro.test)
 
@@ -47,54 +28,55 @@ library(bnlearn)
 ?discretize
 
 # select variables to be discretized
-to.discretize <- c("Education", "Age", "Population", "Advertising", "Income")
+to_discretize <- c("Education", "Age", "Population", "Advertising", "Income")
 
 # discretize all variables into 5 bins each
-#discretized <- discretize(data = Carseats[,to.discretize], 
-#                          method = 'quantile', 
-#                          breaks = c(5,5,5,5,5))
+discretized <- discretize(data = carseats[,to_discretize],
+                         method = 'quantile',
+                         breaks = c(5,5,5,5,5))
 
-# print the summary statistics for the Advertising variable
-summary(Carseats$Advertising)
-
-# load ggplot2
-library(ggplot2)
-
-# plot the histogram for the Advertising variable
-ggplot(data = Carseats, mapping = aes(x = Advertising)) + 
-  geom_histogram(bins = 30)
-
-# discretize all variables into 5 bins each, but the Advertising variable into 2 bins
-discretized <- discretize(data = Carseats[,to.discretize], 
-                          method = 'quantile', 
-                          breaks = c(5,5,5,2,5))
-
-# print the summary statistics of the discretized dataset
+# check the summary of the discretized variables
 summary(discretized)
 
-# calculate the difference between the two vectors (with variable names)
-cols.to.add <- setdiff(names(Carseats), names(discretized))
+# examine the distribution of the Advertising variable
+# by plotting its histogram
+library(ggplot2)
+ggplot(data = carseats, mapping = aes(x = Advertising)) + 
+  geom_histogram(bins = 30) +
+  theme_minimal()
+
+# discretize all variables into 5 bins each, but the Advertising variable 
+# into 3 bins
+discretized <- discretize(data = carseats[,to_discretize], 
+                          method = 'quantile', 
+                          breaks = c(5,5,5,3,5))
+
+# print the summary statistics of the discretized variables
+summary(discretized)
+
+# create a vector of variable names to be added to the data frame with the 
+# discretised variables
+cols_to_add <- setdiff(names(carseats), names(discretized))
 
 # merge the discretized data frame with other columns from the original data frame
-carseats.new <- cbind(Carseats[,cols.to.add], discretized)
-str(carseats.new)
+carseats_new <- cbind(carseats[,cols_to_add], discretized)
+str(carseats_new)
 
 # update the variable order (optional)
-carseats.new <- carseats.new[,names(Carseats)]
+carseats_new <- carseats_new[,names(carseats)]
 
-# print the structure of the carseats.new data frame
-str(carseats.new)
+#############################################
+# Split the data into training and test sets
+#############################################
 
 # load the caret package
 library(caret)
 
-# set seed
-set.seed(20320)
-
-# create train and test sets
-train.indices <- createDataPartition(carseats.new$HighSales, p = 0.8, list = FALSE)
-train.data <- carseats.new[train.indices,]
-test.data <- carseats.new[-train.indices,]
+# set seed and create train and test sets
+set.seed(2421)
+train_indices <- createDataPartition(carseats_new$HighSales, p = 0.8, list = FALSE)
+train_data <- carseats_new[train_indices,]
+test_data <- carseats_new[-train_indices,]
 
 ##########################
 # Model building
@@ -107,63 +89,50 @@ library(e1071)
 ?naiveBayes
 
 # build a model with all variables
-nb1 <- naiveBayes(HighSales ~ ., data = train.data)
+nb1 <- naiveBayes(HighSales ~ ., data = train_data)
 
 # print the model
 print(nb1)
 
 # make the predictions with nb1 model over the test dataset
-nb1.pred <- predict(nb1, newdata = test.data, type = 'class')
+nb1.pred <- predict(nb1, newdata = test_data, type = 'class')
 
 # print several predictions
 head(nb1.pred)
 
 # create the confusion matrix
-nb1.cm <- table(true = test.data$HighSales, predicted = nb1.pred)
+nb1.cm <- table(true = test_data$HighSales, predicted = nb1.pred)
 nb1.cm
 
-# function for computing evaluation metrix
-compute.eval.metrics <- function(cmatrix) {
-  TP <- cmatrix[1,1] # true positive
-  TN <- cmatrix[2,2] # true negative
-  FP <- cmatrix[2,1] # false positive
-  FN <- cmatrix[1,2] # false negative
-  acc = sum(diag(cmatrix)) / sum(cmatrix)
-  precision <- TP / (TP + FP)
-  recall <- TP / (TP + FN)
-  F1 <- 2*precision*recall / (precision + recall)
-  c(accuracy = acc, precision = precision, recall = recall, F1 = F1)
-}
-
 # compute the evaluation metrics
-nb1.eval <- compute.eval.metrics(nb1.cm)
+nb1.eval <- compute_eval_metrics(nb1.cm)
 nb1.eval
 
 # build a model with variables that proved relevant in the decision tree classifier (Lab #4)
 # namely ShelveLoc, Price, Advertising, Age, and CompPrice
 nb2 <- naiveBayes(HighSales ~ ShelveLoc + Price + Advertising + Age + CompPrice,
-data = train.data)
+data = train_data)
 
 # make the predictions with nb2 model over the test dataset
-nb2.pred <- predict(nb2, newdata = test.data, type = 'class')
+nb2.pred <- predict(nb2, newdata = test_data, type = 'class')
 
 # create the confusion matrix for nb2 predictions
-nb2.cm <- table(true = test.data$HighSales, predicted = nb2.pred)
+nb2.cm <- table(true = test_data$HighSales, predicted = nb2.pred)
 nb2.cm
 
 # compute the evaluation metrics for the nb2 model
-nb2.eval <- compute.eval.metrics(nb2.cm)
+nb2.eval <- compute_eval_metrics(nb2.cm)
 nb2.eval
 
 # compare the evaluation metrics for nb1 and nb2
 data.frame(rbind(nb1.eval, nb2.eval), row.names = c("NB_1", "NB_2"))
 
-##########################
+##############
 # ROC curves
-##########################
+##############
 
 # compute probabilities for each class value for the observations in the test set
-nb2.pred.prob <- predict(nb2, newdata = test.data, type = "raw") # note that the type parameter is now set to 'raw'
+nb2.pred.prob <- predict(nb2, newdata = test_data, type = "raw") # note that the type parameter is now set to 'raw'
 head(nb2.pred.prob)
 
 #install.packages('pROC')
@@ -171,7 +140,7 @@ head(nb2.pred.prob)
 library(pROC)
 
 # create a ROC curve
-nb2.roc <- roc(response = as.numeric(test.data$HighSales), 
+nb2.roc <- roc(response = as.numeric(test_data$HighSales), 
                predictor = nb2.pred.prob[,1],
                levels = c(2, 1))
 
@@ -189,8 +158,8 @@ nb2.coords <- coords(nb2.roc,
                      x = "local maximas")
 nb2.coords
 
-# choose a threshold that maximizes sensitivity while keep decent values of other metrics
-prob.threshold <- nb2.coords[4,4]
+# choose a threshold that assures a high value for sensitivity  
+prob.threshold <- nb2.coords[3,4]
 
 # create predictions based on the new threshold
 nb2.pred2 <- ifelse(test = nb2.pred.prob[,1] >= prob.threshold, # if probability of the positive class (No) is greater than the chosen probability threshold ...
@@ -199,11 +168,11 @@ nb2.pred2 <- ifelse(test = nb2.pred.prob[,1] >= prob.threshold, # if probability
 nb2.pred2 <- as.factor(nb2.pred2)
 
 # create the confusion matrix for the new predictions
-nb2.cm2 <- table(actual = test.data$HighSales, predicted = nb2.pred2)
+nb2.cm2 <- table(actual = test_data$HighSales, predicted = nb2.pred2)
 nb2.cm2
 
 # compute the evaluation metrics
-nb2.eval2 <- compute.eval.metrics(nb2.cm2)
+nb2.eval2 <- compute_eval_metrics(nb2.cm2)
 nb2.eval2
 
 # compare the evaluation metrics for all three models

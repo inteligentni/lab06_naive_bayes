@@ -2,31 +2,15 @@
 # Naive Bayes Classifier
 ##########################
 
-##########################
-# Prepare the data set
-##########################
-
-# load ISLR package
+# load utility functions
 
 
-# examine the dataset structure
+# get adapted Carseats data set
 
 
-# calculate the 3rd quartile
-
-
-# create a new variable HighSales based on the value of the 3rd quartile
-
-
-# convert HighSales from character to factor
-
-
-# remove the Sales variable
-
-
-########################################
-# Numerical variables discretization
-########################################
+#################################
+# Discretise numerical variables
+#################################
 
 # select numerical variables
 
@@ -34,8 +18,8 @@
 # apply the Shapiro-Wilk test to each numerical column (variable)
 
 
-#install.packages('bnlearn')
-# load bnlearn package
+# install and load bnlearn package
+
 
 # open the docs for the discretize f.
 
@@ -46,22 +30,23 @@
 # discretize all variables into 5 bins each
 
 
-# print the summary statistics for the Advertising variable
+# check the summary of the discretized variables
 
 
-# load ggplot2
+# examine the distribution of the Advertising variable
+# by plotting its histogram
 
 
-# plot the histogram for the Advertising variable
+
+# discretize all variables into 5 bins each, but the Advertising variable 
+# into 3 bins
 
 
-# discretize all variables into 5 bins each, but the Advertising variable into 2 bins
+# print the summary statistics of the discretized variables
 
 
-# print the summary statistics of the discretized dataset
-
-
-# calculate the difference between the two vectors (with variable names)
+# create a vector of variable names to be added to the data frame with the 
+# discretised variables
 
 
 # merge the discretized data frame with other columns from the original data frame
@@ -70,14 +55,15 @@
 # update the variable order (optional)
 
 
-# print the structure of the carseats.new data frame
-
+#############################################
+# Split the data into training and test sets
+#############################################
 
 # load the caret package
 
-# set seed
 
-# create train and test sets
+# set seed and create train and test sets
+
 
 
 ##########################
@@ -105,9 +91,6 @@
 # create the confusion matrix
 
 
-# function for computing evaluation metrix
-
-
 # compute the evaluation metrics
 
 
@@ -127,15 +110,14 @@
 # compare the evaluation metrics for nb1 and nb2
 
 
-##########################
+##############
 # ROC curves
-##########################
+##############
 
 # compute probabilities for each class value for the observations in the test set
 
 
-#install.packages('pROC')
-# load pROC package
+# install and load pROC package
 
 
 # create a ROC curve
@@ -147,10 +129,12 @@
 # plot the ROC curve, using the "youden" method
 
 
+
 # get the coordinates for all local maximas
 
 
-# choose a threshold that maximizes sensitivity while keep decent values of other metrics
+
+# choose a threshold that assures a high value for sensitivity  
 
 
 # create predictions based on the new threshold
@@ -163,4 +147,3 @@
 
 
 # compare the evaluation metrics for all three models
-
