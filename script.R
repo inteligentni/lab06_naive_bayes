@@ -142,7 +142,7 @@ nb1.eval
 # build a model with variables that proved relevant in the decision tree classifier (Lab #4)
 # namely ShelveLoc, Price, Advertising, Age, and CompPrice
 nb2 <- naiveBayes(HighSales ~ ShelveLoc + Price + Advertising + Age + CompPrice,
-data = train.data)
+                  data = train.data)
 
 # make the predictions with nb2 model over the test dataset
 nb2.pred <- predict(nb2, newdata = test.data, type = 'class')
