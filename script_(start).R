@@ -95,7 +95,7 @@
 
 
 # build a model with variables that proved relevant in the decision tree classifier (Lab #4)
-# namely ShelveLoc, Price, Advertising, Age, and CompPrice
+# namely ShelveLoc, Price, Advertising, Income, Age, and US
 
 
 # make the predictions with nb2 model over the test dataset

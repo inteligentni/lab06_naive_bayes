@@ -344,8 +344,8 @@ nb1.eval
 We can try to build a better model by reducing the set of variables to those that are expected to be relevant predictors. For example, we can choose only those variables that proved relevant in the decision tree classifier (Lab #4).
 
 ```{r}
-# build a model with variables ShelveLoc, Price, Advertising, Age, CompPrice
-nb2 <- naiveBayes(HighSales ~ ShelveLoc + Price + Advertising + Age + CompPrice,
+# build a model with variables ShelveLoc, Price, Advertising, Income, Age, and US
+nb2 <- naiveBayes(HighSales ~ ShelveLoc + Price + Advertising + Age + Income + US,
                    data = train.data)
 ```
 
@@ -490,18 +490,19 @@ Instead of using the plot to get the threshold value, we can use the *coords* fu
 # get the coordinates for all local maximas
 nb2.coords <- coords(nb2.roc, 
                      ret = c("accuracy", "spec", "sens", "thr"),
-                     x = "local maximas")
+                     x = "local maximas",
+                     transpose = FALSE)
 nb2.coords
 ```
 
-From the above plot, we can see that the ROC curve has 9 local maxima, and we have obtained the metrics for each of them. We can now choose the threshold that will give us the best result in terms of accuracy, sensitivity (recall or true positive rate) or specificity (true negative rate). 
+From the above plot, we can see that the ROC curve has 8 local maxima, and we have obtained the metrics for each of them. We can now choose the threshold that will give us the best result in terms of accuracy, sensitivity (recall or true positive rate) or specificity (true negative rate). 
 
-For example, in our case, sensitivity represents the proportion of low sales that we have recognized as such (as being low). So, if we want to maximize sensitivity, that is, to reduce the number of stores that were falsely classified as having high sales, we can choose the threshold of 0.4820, as it will give us the sensitivity of 0.9667, while maximizing accuracy (0.8734) and still providing us with a low, but still decent value for the specificity (0.5789). 
+For example, in our case, sensitivity represents the proportion of low sales that we have recognized as such (as being low). So, if we want to maximize sensitivity, that is, to reduce the number of stores that were falsely classified as having high sales, we can choose the threshold of 0.3301, as it will give us the sensitivity of 1.0, while maximizing accuracy (0.8987) and still providing us with a low, but still decent value for the specificity (0.5789). 
 Let's make predictions based on the chosen threshold:   
 
 ```{r}
 # choose a threshold that maximizes sensitivity while keep decent values of other metrics 
-prob.threshold <- nb2.coords[3,4]
+prob.threshold <- nb2.coords[1,4]
 ```
 
 Determine the class label (Yes, No) using the predicted probabilities (nb2.pred.prob) and the chosen threshold (prob.threshold):

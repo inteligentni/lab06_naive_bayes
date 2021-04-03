@@ -109,8 +109,8 @@ nb1.eval <- compute_eval_metrics(nb1.cm)
 nb1.eval
 
 # build a model with variables that proved relevant in the decision tree classifier (Lab #4)
-# namely ShelveLoc, Price, Advertising, Age, and CompPrice
-nb2 <- naiveBayes(HighSales ~ ShelveLoc + Price + Advertising + Age + CompPrice,
+# namely ShelveLoc, Price, Advertising, Income, Age, and US
+nb2 <- naiveBayes(HighSales ~ ShelveLoc + Price + Advertising + Income + Age + US,
 data = train_data)
 
 # make the predictions with nb2 model over the test dataset
@@ -155,11 +155,11 @@ plot.roc(nb2.roc,
 # get the coordinates for all local maximas
 nb2.coords <- coords(nb2.roc, 
                      ret = c("accuracy", "spec", "sens", "thr"),
-                     x = "local maximas")
+                     x = "local maximas", transpose = FALSE)
 nb2.coords
 
 # choose a threshold that assures a high value for sensitivity  
-prob.threshold <- nb2.coords[3,4]
+prob.threshold <- nb2.coords[1,4]
 
 # create predictions based on the new threshold
 nb2.pred2 <- ifelse(test = nb2.pred.prob[,1] >= prob.threshold, # if probability of the positive class (No) is greater than the chosen probability threshold ...
